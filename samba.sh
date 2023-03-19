@@ -284,6 +284,9 @@ done < <(env | awk '/^USER[0-9=_]/ {sub (/^[^=]*=/, "", $0); print}')
 [[ "${INCLUDE:-""}" ]] && include "$INCLUDE"
 [[ "${PERMISSIONS:-""}" ]] && perms &
 
+echo "Mounting encFS"
+echo $ENCFS_PASSPHRASE | encfs --standard --stdinpass --no-default-flags -o allow_other -o uid=$ENCFS_UID -o gid=$ENCFS_GID /enc /data
+
 if [[ $# -ge 1 && -x $(which $1 2>&-) ]]; then
     exec "$@"
 elif [[ $# -ge 1 ]]; then

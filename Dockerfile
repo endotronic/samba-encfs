@@ -3,7 +3,7 @@ MAINTAINER David Personette <dperson@gmail.com>
 
 # Install samba
 RUN apk --no-cache --no-progress upgrade && \
-    apk --no-cache --no-progress add bash samba shadow tini tzdata && \
+    apk --no-cache --no-progress add bash samba shadow tini tzdata fuse encfs && \
     addgroup -S smb && \
     adduser -S -D -H -h /tmp -s /sbin/nologin -G smb -g 'Samba User' smbuser &&\
     file="/etc/samba/smb.conf" && \
@@ -55,14 +55,20 @@ RUN apk --no-cache --no-progress upgrade && \
     echo '' >>$file && \
     rm -rf /tmp/*
 
+CMD mkdir /enc && chmod 777 /enc && mkdir /data && chmod 777 /data
+
 COPY samba.sh /usr/bin/
 
 EXPOSE 137/udp 138/udp 139 445
 
 HEALTHCHECK --interval=60s --timeout=15s \
-            CMD smbclient -L \\localhost -U % -m SMB3
+    CMD smbclient -L \\localhost -U % -m SMB3
 
 VOLUME ["/etc", "/var/cache/samba", "/var/lib/samba", "/var/log/samba",\
-            "/run/samba"]
+    "/run/samba"]
+
+ENV ENCFS_UID=1000
+ENV ENCFS_GID=1000
 
 ENTRYPOINT ["/sbin/tini", "--", "/usr/bin/samba.sh"]
+CMD ["-s", "encrypted;/enc;yes;no;yes;all", "-s", "decrypted;/data;yes;yes;yes;all", "-n", "-W"]
